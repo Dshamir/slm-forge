@@ -1,7 +1,9 @@
+<img width="1774" height="887" alt="09d432ee-3b6d-4c67-8e64-f4b8f6120327" src="https://github.com/user-attachments/assets/c93f0dcd-456f-48a0-bc96-b589ead27c19" />
+---
 # SLM-Forge
 
 > A skill tree that takes you from **"here's a corpus and a goal"** to a **trained, evaluated, quantized, and published Small Specialty Language Model** — from the Claude Code CLI, on AWS, in a single session, with a **single human gate**.
-
+---
 **SLM-Forge is a Proof of Concept** of **semi-autonomous skills running inside the Claude Code TUI**, developed by [Nexless](https://huggingface.co/Nexless). It published its first end-to-end model on 2026-04-25:
 
 🦷 **Live case study →** [`Nexless/dental-ai-research-slm-0m-20260425-3845`](https://huggingface.co/Nexless/dental-ai-research-slm-0m-20260425-3845) — a research-methodology assistant for dental-AI papers (Qwen2.5-7B + QLoRA r=32 on 320 papers, $11.62 AWS spend, 9 h wall-clock).
