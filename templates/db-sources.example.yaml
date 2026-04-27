@@ -1,0 +1,227 @@
+# Example db-sources.yaml for forge-ingest-db
+#
+# Place this file at slm-forge/.runs/<run-id>/db-sources.yaml before calling
+# the skill, OR pass the path explicitly:
+#   bash skills/forge-ingest-db/run.sh <run-id> /path/to/this.yaml
+#
+# Credential refs:
+#   env:VAR_NAME      → process environment
+#   file:/abs/path    → read file contents
+#   vault:path#key    → HashiCorp Vault (v2.2+)
+
+version: 1
+sources:
+
+  # ---- SQLite (file-based, no creds) ----
+  - name: local-notes
+    kind: sqlite
+    conn:
+      path: /data/dental-notes.db
+      read_only: true
+    extractions:
+      - id: clinical-notes
+        query: |
+          SELECT id, created_at, patient_id, body
+          FROM notes
+          WHERE length(body) > 200 AND body IS NOT NULL
+        id_template:   "note-{id}"
+        text_template: "{body}"
+        metadata:
+          section: clinical_notes
+        limit: 100000
+        batch_size: 1000
+
+  # ---- PostgreSQL (requires psycopg2) ----
+  - name: pubmed-dental
+    kind: postgres
+    conn:
+      host_ref:     "env:PG_HOST"
+      port:         5432
+      database:     publications
+      user_ref:     "env:PG_USER"
+      password_ref: "env:PG_PASSWORD"
+      sslmode:      require
+    extractions:
+      - id: abstracts
+        query: |
+          SELECT pmid, title, authors, abstract, year
+          FROM pubmed_articles
+          WHERE abstract IS NOT NULL
+            AND length(abstract) > 200
+            AND category = 'dental'
+        id_template:   "pubmed-{pmid}"
+        text_template: |
+          {title}
+          Authors: {authors} ({year})
+
+          {abstract}
+        metadata:
+          section: pubmed
+        limit: 50000
+        batch_size: 1000
+
+  # ---- MySQL (v2.2 — requires pymysql) ----
+  - name: legacy-clinic-mysql
+    kind: mysql
+    conn:
+      host_ref:     "vault:secret/data/forge/mysql#host"   # vault: ref (KV v2)
+      port:         3306
+      database:     clinic_records
+      user_ref:     "vault:secret/data/forge/mysql#user"
+      password_ref: "vault:secret/data/forge/mysql#password"
+      charset:      utf8mb4
+      ssl_disabled: false
+      connect_timeout_sec: 30
+    extractions:
+      - id: case-notes
+        query: |
+          SELECT case_id, dentist, created_at, summary
+          FROM case_notes
+          WHERE summary IS NOT NULL AND CHAR_LENGTH(summary) > 150
+        id_template:   "case-{case_id}"
+        text_template: "{dentist} ({created_at}): {summary}"
+        metadata:
+          section: clinic_legacy
+        limit: 25000
+        batch_size: 500
+
+  # ---- MongoDB (v2.2 — requires pymongo) ----
+  - name: imaging-metadata-mongo
+    kind: mongo
+    conn:
+      uri_ref:      "env:MONGO_URI"        # mongodb://user:pass@host:27017/?...
+      database:     imaging
+      auth_source:  admin
+    extractions:
+      - id: scan-reports
+        collection: scan_reports
+        filter:     {"status": "complete", "report_text": {"$exists": true}}
+        projection: {"_id": 1, "patient_id": 1, "report_text": 1, "tooth": 1}
+        sort:       [["created_at", -1]]
+        id_field:   _id
+        id_template:   "scan-{_id}"
+        text_template: "Tooth {tooth} (patient {patient_id}): {report_text}"
+        metadata:
+          section: imaging_reports
+        limit: 100000
+        batch_size: 500
+
+  # ---- DuckDB (v2.3 — requires duckdb; can ATTACH parquet/csv/json) ----
+  - name: papers-duckdb
+    kind: duckdb
+    conn:
+      path: /data/papers.duckdb
+      read_only: true
+      attach:
+        - {alias: "external_pq", path: "/data/abstracts.parquet"}
+        - {alias: "external_csv", path: "/data/authors.csv"}
+    extractions:
+      - id: cross-format-join
+        query: |
+          SELECT p.id, p.title, e.body, c.author_list
+          FROM papers p
+          JOIN external_pq e ON p.id = e.paper_id
+          JOIN external_csv c ON p.id = c.paper_id
+        id_template:   "duck-{id}"
+        text_template: "{title}\nAuthors: {author_list}\n\n{body}"
+        metadata: {section: papers_joined}
+        batch_size: 500
+
+  # ---- MS SQL Server (v2.3 — requires pymssql) ----
+  - name: legacy-records-mssql
+    kind: mssql
+    conn:
+      host:     sql.example.com
+      port:     1433
+      database: ClinicRecords
+      user_ref:     "env:MSSQL_USER"
+      password_ref: "env:MSSQL_PASSWORD"
+      charset:  UTF-8
+    extractions:
+      - id: visits
+        query: "SELECT VisitId, PatientId, Notes FROM dbo.Visits WHERE LEN(Notes) > 200"
+        id_template:   "visit-{VisitId}"
+        text_template: "{Notes}"
+        metadata: {section: clinic_visits}
+        batch_size: 500
+
+  # ---- ClickHouse (v2.3 — requires clickhouse-connect; HTTP/TLS) ----
+  - name: events-clickhouse
+    kind: clickhouse
+    conn:
+      host:     ch.example.com
+      port:     8443                       # 8443 = TLS, 8123 = plain
+      database: dental_events
+      user:     forge_reader
+      password_ref: "vault:secret/data/clickhouse#password"
+      secure:   true
+      verify:   true
+    extractions:
+      - id: comments
+        query: |
+          SELECT event_id, user_id, comment_text
+          FROM events
+          WHERE comment_text != '' AND length(comment_text) > 150
+          LIMIT 100000
+        id_template:   "ev-{event_id}"
+        text_template: "{comment_text}"
+        metadata: {section: user_comments}
+        batch_size: 1000
+
+  # ---- Snowflake (v2.3 — requires snowflake-connector-python; key-pair auth preferred) ----
+  - name: warehouse-snowflake
+    kind: snowflake
+    conn:
+      account:   xy12345.us-east-1
+      user_ref:  "env:SNOW_USER"
+      private_key_path: /etc/forge/snowflake_rsa.p8
+      warehouse: COMPUTE_WH
+      database:  DENTAL_DW
+      schema:    PUBLIC
+      role:      FORGE_READER
+    extractions:
+      - id: aggregated-cases
+        query: "SELECT CASE_ID, REPORT_BODY FROM CASE_REPORTS WHERE REPORT_BODY IS NOT NULL"
+        id_template:   "case-{CASE_ID}"
+        text_template: "{REPORT_BODY}"
+        metadata: {section: warehouse_cases}
+        batch_size: 1000
+
+  # ---- BigQuery (v2.3 — requires google-cloud-bigquery; service-account auth) ----
+  - name: research-bigquery
+    kind: bigquery
+    conn:
+      project:  my-research-project
+      location: US
+      credentials_json_path: /etc/forge/gcp-sa.json
+      use_query_cache: true
+    extractions:
+      - id: pubmed-bq
+        query: |
+          SELECT pmid, title, abstract
+          FROM `bigquery-public-data.pubmed.articles`
+          WHERE keywords LIKE '%dental%' AND CHAR_LENGTH(abstract) > 200
+          LIMIT 50000
+        id_template:   "bq-pmid-{pmid}"
+        text_template: "{title}\n\n{abstract}"
+        metadata: {section: pubmed_bq}
+        batch_size: 1000
+
+  # ---- Cassandra (v2.3 — requires cassandra-driver) ----
+  - name: events-cassandra
+    kind: cassandra
+    conn:
+      contact_points:  ["cass-1.example.com", "cass-2.example.com"]
+      port:            9042
+      keyspace:        dental
+      user_ref:        "env:CASS_USER"
+      password_ref:    "env:CASS_PASSWORD"
+      ssl_ca_path:     /etc/forge/cass-ca.pem
+      consistency:     LOCAL_ONE
+    extractions:
+      - id: timeline
+        query: "SELECT event_id, narrative FROM patient_timeline WHERE narrative IS NOT NULL"
+        id_template:   "cass-{event_id}"
+        text_template: "{narrative}"
+        metadata: {section: patient_timeline}
+        batch_size: 500

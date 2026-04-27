@@ -1,0 +1,40 @@
+# {{forge_model_name}}
+
+{{one_paragraph_description}}
+
+## Try it now
+
+**In your browser** (zero install):
+→ https://huggingface.co/spaces/{{hf_namespace}}/{{forge_model_name}}-demo
+
+**On your laptop with LM Studio:**
+1. Download LM Studio from https://lmstudio.ai
+2. Search for `{{hf_namespace}}/{{forge_model_name}}` in the app
+3. Download the Q4_K_M variant (~{{q4km_size_mb}} MB), load, chat
+
+**In your terminal with Ollama:**
+```bash
+curl https://huggingface.co/{{hf_namespace}}/{{forge_model_name}}/raw/main/Modelfile -o Modelfile
+ollama create {{forge_model_name}} -f Modelfile
+ollama run {{forge_model_name}}
+```
+
+## What this is
+
+{{what_this_is}}
+
+- ~{{target_params_human}} parameters
+- Domain: {{domain}}
+- Base: {{base_model}}
+- Trained on: {{corpus_doc_count}} documents ({{corpus_token_count}} tokens)
+
+## What this isn't
+
+- Not a general-purpose chatbot
+- Not a replacement for {{base_model}} on out-of-domain tasks
+- Not GPT-4-quality — it's a focused specialist
+
+## Model card
+
+Full details, eval results, training data description, and limitations:
+→ https://huggingface.co/{{hf_namespace}}/{{forge_model_name}}

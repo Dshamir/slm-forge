@@ -1,0 +1,96 @@
+# Example multi-source.yaml for forge-ingest (v2.3)
+#
+# Pass this file as the first arg to /slm-forge to combine N sources into
+# one merged training corpus:
+#   /slm-forge ./multi-source.yaml 100 --domain dental.ai.research
+#
+# Dry-run preview (sizes inputs, validates handlers, no downloads):
+#   bash slm-forge/skills/forge-ingest/run.sh <run-id> ./multi-source.yaml --dry-run
+#
+# Source order matters for cross-source dedup: the source listed FIRST
+# wins on duplicate text. Within-source dedup always runs.
+
+version: 1
+run_name: dental-multimodal-jan2026   # optional
+domain: dental.ai.research            # optional override
+budget_usd: 100                       # optional override
+
+sources:
+
+  # 1. Local document directory (PDF/DOCX/PPTX/TXT/HTML/MD/code/...)
+  - name: papers-local
+    kind: local_dir
+    path: ./Publications/
+    enable_plugins: [archive]         # opt-in heavy tiers (ocr/transcribe excluded by default here)
+
+  # 2. Compressed archive — extracted to tmpdir, then walked
+  - name: papers-2024-zip
+    kind: archive
+    path: /downloads/papers-2024.tar.gz
+
+  # 3. HTTP download (any extension; auto-dispatched after sha256 verify)
+  - name: pubmed-snapshot
+    kind: http
+    url: https://example.org/dental-pubmed-2025.jsonl
+    sha256: 0000000000000000000000000000000000000000000000000000000000000000
+    filename: pubmed.jsonl
+
+  # 4. Pre-formatted JSONL (passes through to merge)
+  - name: prior-run-corpus
+    kind: jsonl
+    path: ./prior-runs/2025-12.jsonl
+
+  # 5. HuggingFace dataset
+  - name: hf-dental-qa
+    kind: hf_dataset
+    repo: nlpaueb/dental-qa
+    split: train
+    text_field: question
+
+  # 6. Live database (delegates to forge-ingest-db; supports 10 adapters)
+  - name: pubmed-live-pg
+    kind: database
+    config: ./db-sources.yaml          # see db-sources.example.yaml
+
+  # 7. Git repo (v2.3) — clones a branch/tag/SHA, applies include/exclude
+  - name: dental-docs-repo
+    kind: git
+    url: https://github.com/example/dental-docs.git
+    ref: main                          # branch | tag | commit SHA
+    depth: 1                           # shallow clone for branches/tags
+    include: ["*.md", "docs/**"]
+    exclude: ["**/CHANGELOG.md"]
+    # auth_token_ref: "vault:secret/data/github#token"   # only for private repos
+
+  # 8. AWS S3 prefix (v2.3) — also handles MinIO via endpoint_url
+  - name: papers-s3
+    kind: s3
+    bucket: dental-research-papers
+    prefix: "abstracts/2026/"
+    region: ca-central-1
+    # endpoint_url: https://minio.local   # for S3-compatible backends
+    access_key_id_ref:     "env:AWS_ACCESS_KEY_ID"
+    secret_access_key_ref: "env:AWS_SECRET_ACCESS_KEY"
+    include: ["*.pdf", "*.jsonl"]
+
+  # 9. Google Cloud Storage (v2.3)
+  - name: corpus-gcs
+    kind: gcs
+    bucket: my-dental-corpus
+    prefix: "snapshots/"
+    project: my-gcp-project
+    credentials_json_ref: "vault:secret/data/gcp/forge#sa_json"
+
+  # 10. Azure Blob Storage (v2.3)
+  - name: corpus-azure
+    kind: azure
+    account: mystorage
+    container: corpus
+    prefix: "papers/"
+    sas_token_ref: "env:AZ_SAS"
+    # OR: connection_string_ref: "vault:secret/data/az#conn"
+
+options:
+  dedup_across_sources: true           # default true; first source wins on tie
+  min_len: 200                         # MIN_LEN filter at orchestrator level
+  max_len: 100000                      # MAX_LEN filter; longer chunks auto-split

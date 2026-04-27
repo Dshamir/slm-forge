@@ -1,0 +1,49 @@
+# forge-eval config (M5-prep)
+# Generated per-forge by forge-eval/run.sh from this template.
+
+forge_id: {{forge_id}}
+schema_version: "1.0.0"
+
+# Weights to evaluate (our trained model) vs baseline (plan.base_model)
+model:
+  hf_local_path: /workspace/weights/final
+  baseline_hf_repo: {{base_model}}
+
+# Generic benchmark — small + fast subset of lm-eval-harness
+generic:
+  tasks:
+    - hellaswag
+    - arc_easy
+    - winogrande
+  num_fewshot: 0
+  batch_size: auto      # falls back to 1 on OOM
+  limit: 200            # cap samples per task for speed; full eval = null
+  output_path: /workspace/eval/generic-bench.json
+
+# Domain-specific eval (routed by spec.domain)
+domain:
+  type: {{domain_type}}          # dental | legal | code | medical | generic
+  eval_set_path: {{domain_eval_set_path}}   # path on instance; null = perplexity-only
+  max_samples: 50
+  output_path: /workspace/eval/domain-bench.json
+
+# Perplexity on the test split
+perplexity:
+  test_jsonl: /workspace/data/shaped/test.jsonl
+  max_samples: 500
+  chunk_size: 512
+  output_path: /workspace/eval/perplexity.json
+
+# Sample generations (20 prompts showcase)
+samples:
+  num_prompts: 20
+  prompts_file: {{sample_prompts_path}}
+  max_tokens: 200
+  temperature: 0.7
+  output_path: /workspace/eval/samples.md
+  use_llama_cpp: true           # llama-cli from bootstrap; avoids re-loading HF model
+
+# Baseline diff — run the same generic + perplexity against base model
+baseline_diff:
+  enabled: true
+  output_path: /workspace/eval/comparison-vs-baseline.json

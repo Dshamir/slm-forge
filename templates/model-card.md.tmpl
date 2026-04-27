@@ -1,0 +1,135 @@
+---
+license: {{license}}
+language: {{language}}
+tags:
+  - small-language-model
+  - domain-specialized
+  - parameters-under-300m
+base_model: {{base_model}}
+---
+
+# {{forge_model_name}}
+
+{{one_paragraph_description}}
+
+## Model Details
+
+- **Parameters:** {{target_params}}
+- **Base model:** [{{base_model}}](https://huggingface.co/{{base_model}})
+- **Training regime:** {{training_regime}}
+- **Training framework:** {{training_framework}}
+- **Chat template:** {{chat_template}}
+- **License:** {{license}}
+
+## Intended Use
+
+{{target_use}}
+
+## Training Data
+
+{{corpus_description}}
+
+Domain: `{{domain}}`. Corpus shape: {{corpus_token_count}} tokens, {{corpus_doc_count}} documents.
+
+## Evaluation
+
+Full eval reports: [comparison-vs-baseline.md](eval/comparison-vs-baseline.md).
+
+### Domain-specific performance
+
+{{domain_eval_table}}
+
+### Generic performance
+
+{{generic_eval_table}}
+
+### Baseline comparison
+
+{{baseline_diff_table}}
+
+## Limitations
+
+- Small model — capabilities are proportionally limited
+- Domain specialization may cause out-of-domain degradation vs baseline
+- Not a general-purpose assistant; best at {{domain}}-specific tasks
+{{additional_limitations_from_eval_samples}}
+
+## Recommended sampling settings
+
+This is a small model (≤300M params) fine-tuned on a narrow domain. Without
+the parameters below, it can collapse into repetition or emit garbled GGUF
+detokenize artifacts (e.g. literal `tti`, `ttiassistant` from Qwen ChatML
+markers). **Always use:**
+
+| param | value | reason |
+|---|---|---|
+| `temperature` | 0.5 | 0.7 is too hot for a small base on narrow corpus |
+| `top_p` | 0.9 | constrains tail |
+| `top_k` | 40 | constrains tail |
+| `repeat_penalty` | 1.18 | kills paragraph loops (the main failure mode) |
+| `repeat_last_n` | 256 | window for the penalty |
+| `max_tokens` | 320 | keep responses short |
+
+**LM Studio:** open the right-hand "Advanced configuration" panel and set
+the values above. Also add these stop strings under "Stop strings":
+`<|im_end|>`, `<|im_start|>`, `<|endoftext|>`, `ttiuser`, `ttiassistant`.
+
+**Ollama:** the published [Modelfile](./Modelfile) has these defaults baked
+in — just `ollama create ... -f Modelfile`.
+
+**llama.cpp / llama-cpp-python:** see the [Space app.py](https://huggingface.co/spaces/{{hf_namespace}}/{{forge_model_name}}-demo/blob/main/app.py)
+for a known-working configuration.
+
+## How to Use
+
+### Download the GGUF for local inference (LM Studio, llama.cpp, text-generation-webui)
+
+Quantizations available:
+- `gguf/model-Q4_K_M.gguf` — ~{{q4km_size_mb}} MB — best size/quality trade-off
+- `gguf/model-Q8_0.gguf`   — ~{{q80_size_mb}} MB — near-lossless
+
+### Load via HuggingFace Transformers
+
+```python
+from transformers import AutoModelForCausalLM, AutoTokenizer
+
+tokenizer = AutoTokenizer.from_pretrained("{{hf_namespace}}/{{forge_model_name}}")
+model = AutoModelForCausalLM.from_pretrained("{{hf_namespace}}/{{forge_model_name}}")
+```
+
+### Run in a terminal with Ollama
+
+```bash
+curl https://huggingface.co/{{hf_namespace}}/{{forge_model_name}}/raw/main/Modelfile -o Modelfile
+ollama create {{forge_model_name}} -f Modelfile
+ollama run {{forge_model_name}}
+```
+
+### Try it in a browser
+
+See the [live demo Space](https://huggingface.co/spaces/{{hf_namespace}}/{{forge_model_name}}-demo).
+
+## Training Details
+
+- **Training hardware:** {{training_hardware}}
+- **Training duration:** {{training_duration_minutes}} minutes
+- **Training tokens:** {{training_tokens}}
+- **Training cost:** ${{training_cost_usd}} on AWS (NVIDIA Inception credits)
+- **Reproducibility hash:** {{forge_id}}
+
+## Citation
+
+If you use this model, please cite:
+
+```
+@misc{{{{forge_model_name}}_{{year}}},
+  title={{{{forge_model_name}}: a {{target_params_human}}-parameter {{domain}} SLM}},
+  author={{{{hf_namespace}}}},
+  year={{{{year}}}},
+  url={{https://huggingface.co/{{hf_namespace}}/{{forge_model_name}}}}
+}
+```
+
+---
+
+*Forged with the SLM-Forge skill tree.*

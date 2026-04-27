@@ -1,0 +1,50 @@
+# Secrets
+.env
+.env.local
+*.env.local
+
+# Run state (machine-specific, generated)
+.runs/
+.overnight/
+
+# Corpora (potentially copyrighted, never commit)
+corpora/
+corpora2/
+*.rar
+*.zip
+Publications.rar
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+*.egg-info/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*~
+
+# Logs
+*.log
+dispatch.log
+
+# Temp
+/tmp/
+*.tmp
+
+# Claude Code workspace artifacts (per-machine)
+.claude/local/
+
+# Local forge runtime state
+.slm-forge/

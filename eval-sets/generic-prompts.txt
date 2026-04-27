@@ -1,0 +1,13 @@
+# Generic 10 prompts — used by forge-eval's sample-generation pass when
+# the spec.domain doesn't match a specific eval-set router. Each line is
+# one prompt. Lines starting with # are comments.
+What is a dental crown?
+Explain how a root canal procedure works.
+How often should I brush my teeth?
+What causes cavities?
+Describe the difference between a filling and a crown.
+What is gum disease and how can I prevent it?
+How long does a dental implant procedure take?
+What are the signs I might need a root canal?
+Is it safe to get x-rays every year?
+How can I reduce dental anxiety before an appointment?

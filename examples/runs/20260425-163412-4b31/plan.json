@@ -1,0 +1,71 @@
+{
+  "run_id": "20260425-163412-4b31",
+  "target_dir": "slm-forge/corpora2/extracted/Publications",
+  "domain": "dental-research",
+  "detected_format": "raw-documents",
+  "budget_cap_usd": 500,
+  "base_model": "Qwen/Qwen2.5-3B-Instruct",
+  "regime": "qlora-sft",
+  "framework": "huggingface-trainer",
+  "chat_template": "qwen2",
+  "training_overrides": {
+    "max_steps": 1500,
+    "batch_size": 2,
+    "grad_accum": 4,
+    "max_seq_len": 2048,
+    "grad_ckpt": true,
+    "lora_r": 32,
+    "lora_alpha": 64,
+    "learning_rate": "1e-4",
+    "epochs": 1
+  },
+  "compute": {
+    "instance_type": "g5.2xlarge",
+    "hourly_usd": 1.456,
+    "subnet_strategy": "auto-retry-azs",
+    "max_wall_clock_hours": 4,
+    "training_overrides": {
+      "note": "Sized for 1.6M-token corpus; 3B base reduces overfitting risk vs 7B"
+    }
+  },
+  "estimates": {
+    "clean_tokens": 96392640,
+    "qa_pairs": 413111,
+    "total_wall_clock_minutes": 255,
+    "cost": {
+      "synth_usd": 358.0278,
+      "plan_fit_usd": 0.30,
+      "gpu_usd": 5.10,
+      "total_usd": 363.42780000000005
+    }
+  },
+  "phase_sequence": [
+    "prep",
+    "audit",
+    "synth",
+    "shape",
+    "plan_fit",
+    "provision",
+    "bootstrap",
+    "train",
+    "monitor",
+    "eval",
+    "quantize",
+    "register",
+    "card_validator",
+    "smoketest",
+    "teardown",
+    "report"
+  ],
+  "skip_phases": [],
+  "acceptance_thresholds": {
+    "audit_min_clean_tokens": 500000,
+    "plan_fit_min_qa_mean": 3.5,
+    "plan_fit_min_qa_individual": 2.0,
+    "plan_fit_min_in_domain_pct": 0.95,
+    "plan_fit_max_type_pct": 0.50,
+    "eval_max_artifact_pct": 0.30,
+    "eval_perplexity_must_beat_baseline": true
+  },
+  "budget_cap": 500
+}

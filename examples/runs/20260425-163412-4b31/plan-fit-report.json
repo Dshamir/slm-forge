@@ -1,0 +1,132 @@
+{
+  "verdict": "PASS",
+  "domain": "dental-research",
+  "base_model": "",
+  "n_qa_examples": 5875,
+  "n_sampled": 50,
+  "axes": {
+    "axis1_corpus_content": {
+      "in_domain_pct": 1.0,
+      "off_topic_pct": 0.0,
+      "label_distribution": {
+        "in_domain": 50
+      },
+      "passes": true,
+      "threshold": 0.95
+    },
+    "axis2_coverage": {
+      "subdomain_distribution": {
+        "in_domain": 1.0
+      },
+      "underrepresented_below_threshold": [],
+      "passes": true,
+      "threshold": 0.05,
+      "note": "Soft check \u2014 reported but does not fail the gate. Hard fail only if SOME subdomain has zero coverage AND domain explicitly requires breadth."
+    },
+    "axis3_qa_accuracy": {
+      "n_graded": 50,
+      "overall_mean": 3.875,
+      "worst_individual_score": 2,
+      "below_individual_threshold_count": 0,
+      "passes": true,
+      "thresholds": {
+        "mean": 3.5,
+        "individual": 2.0
+      },
+      "sample_low_grades": []
+    },
+    "axis3b_qa_per_subtopic": {
+      "per_subtopic": {
+        "crown_generation": {
+          "n": 7,
+          "mean": 4.071,
+          "worst_individual": 3
+        },
+        "dental_ai_general": {
+          "n": 29,
+          "mean": 3.716,
+          "worst_individual": 2
+        },
+        "margin_line": {
+          "n": 14,
+          "mean": 4.107,
+          "worst_individual": 2
+        }
+      },
+      "thresholds": {
+        "mean_per_subtopic": 3.5,
+        "individual_per_subtopic": 2.0,
+        "min_n_for_gate": 3
+      },
+      "violators": [],
+      "passes": true
+    },
+    "axis4_qa_diversity": {
+      "type_distribution": {
+        "clinical": 0.18,
+        "mechanism": 0.48,
+        "factual": 0.34
+      },
+      "max_type_pct": 0.48,
+      "passes": true,
+      "threshold": 0.5
+    },
+    "axis5_hyperparams": {
+      "passes": true,
+      "issues": [],
+      "computed": {
+        "effective_batch": 8,
+        "effective_epochs": 2.04,
+        "n_train_examples": 5875
+      }
+    },
+    "axis6_format": {
+      "passes": true,
+      "issues": [],
+      "samples_checked": [
+        {
+          "id": "Nazanin_Thesis_Polytechnique_Montreal_Final-p047-qa0",
+          "ok": true
+        },
+        {
+          "id": "Nazanin_Thesis_Polytechnique_Montreal_Final-p047-qa1",
+          "ok": true
+        },
+        {
+          "id": "Nazanin_Thesis_Polytechnique_Montreal_Final-p047-qa2",
+          "ok": true
+        },
+        {
+          "id": "Nazanin_Thesis_Polytechnique_Montreal_Final-p046-qa0",
+          "ok": true
+        },
+        {
+          "id": "Nazanin_Thesis_Polytechnique_Montreal_Final-p046-qa1",
+          "ok": true
+        }
+      ]
+    },
+    "axis7_budget_fit": {
+      "budget_cap_usd": 500.0,
+      "projected_total_at_plan_time_usd": 363.4278,
+      "actual_synth_usd": 6.494,
+      "projected_synth_usd": 358.0278,
+      "synth_overrun_usd": -351.5338,
+      "synth_overrun_pct": -98.19,
+      "projected_plan_fit_usd": 0.3,
+      "projected_gpu_usd": 5.1,
+      "projected_total_actualized_usd": 11.894,
+      "headroom_absolute_usd": 488.106,
+      "headroom_required_usd": 50.0,
+      "headroom_frac": 0.1,
+      "passes": true,
+      "verdict": "OK"
+    },
+    "axis8_extraction_cost": {
+      "passes": true,
+      "skipped": true,
+      "reason": "FORGE_PLAN_FIT_ANALYSIS_JSON or PLAN_JSON not set"
+    }
+  },
+  "failed_axes": []
+}

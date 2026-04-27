@@ -1,0 +1,35 @@
+# Ollama Modelfile for {{forge_model_name}}
+# Chat template: qwen2 (Qwen2.5 base)
+# Tuned for small-LM degeneration:
+#   - repeat_penalty 1.18 + repeat_last_n 256 (prevents paragraph loops)
+#   - lower temperature 0.5 (was 0.7 — too hot for Qwen2.5-0.5B + narrow LoRA)
+#   - explicit stops for both special tokens AND observed GGUF detokenize
+#     artifacts (`tti`, `ttiuser`, `ttiassistant` — Qwen ChatML markers
+#     don't always survive HF→GGUF→llama-cpp roundtrip on Q4_K_M)
+
+FROM https://huggingface.co/{{hf_namespace}}/{{forge_model_name}}/resolve/main/gguf/model-Q4_K_M.gguf
+
+TEMPLATE """{{ if .System }}<|im_start|>system
+{{ .System }}<|im_end|>
+{{ end }}{{ range .Messages }}<|im_start|>{{ .Role }}
+{{ .Content }}<|im_end|>
+{{ end }}<|im_start|>assistant
+"""
+
+PARAMETER stop "<|im_end|>"
+PARAMETER stop "<|im_start|>"
+PARAMETER stop "<|endoftext|>"
+PARAMETER stop "<|end_of_text|>"
+PARAMETER stop "ttiuser"
+PARAMETER stop "ttiassistant"
+PARAMETER stop "tti\n"
+
+PARAMETER temperature 0.5
+PARAMETER top_p 0.9
+PARAMETER top_k 40
+PARAMETER repeat_penalty 1.18
+PARAMETER repeat_last_n 256
+PARAMETER num_predict 320
+PARAMETER num_ctx 2048
+
+SYSTEM """{{system_prompt}}"""

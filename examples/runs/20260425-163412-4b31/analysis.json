@@ -1,0 +1,80 @@
+{
+  "run_id": "20260425-163412-4b31",
+  "target_dir": "slm-forge/corpora2/extracted/Publications",
+  "input_inventory": {
+    "by_ext": {
+      "ai": 1,
+      "bib": 1,
+      "csv": 3,
+      "doc": 1,
+      "docx": 63,
+      "enl": 4,
+      "frm": 60,
+      "heic": 3,
+      "jpeg": 1,
+      "jpg": 54,
+      "m4a": 5,
+      "mp4": 171,
+      "myd": 57,
+      "myi": 61,
+      "obj": 15,
+      "opt": 8,
+      "pdf": 202,
+      "ply": 1,
+      "png": 59,
+      "pptx": 40,
+      "stl": 636,
+      "tif": 6,
+      "txt": 15,
+      "vtp": 53,
+      "wav": 2,
+      "xlsx": 24,
+      "zip": 1
+    },
+    "total_files": 1547,
+    "total_size_mb": 11031,
+    "estimated_raw_tokens": 722944801
+  },
+  "detected_format": "raw-documents",
+  "format_evidence": {},
+  "domain_signal": {
+    "label": "dental-research",
+    "confidence": 1.0,
+    "via": "user-override"
+  },
+  "needs": [
+    "prep",
+    "audit",
+    "synth",
+    "shape",
+    "plan_fit",
+    "provision",
+    "bootstrap",
+    "train",
+    "monitor",
+    "eval",
+    "quantize",
+    "register",
+    "card_validator",
+    "smoketest",
+    "publish",
+    "teardown",
+    "report"
+  ],
+  "skip_phases": [],
+  "extraction_profile": {
+    "plugins_needed": [
+      "tier-lite",
+      "tier-ocr",
+      "tier-av"
+    ],
+    "disabled_by_env": [],
+    "counts": {
+      "images": 123,
+      "audio_video": 178,
+      "mesh": 705,
+      "binary": 178
+    },
+    "estimated_extraction_time_min": 276
+  }
+}

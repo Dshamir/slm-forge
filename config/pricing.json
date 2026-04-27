@@ -1,0 +1,59 @@
+{
+  "$schema_version": "1.0.0",
+  "$snapshot_date": "2026-04-22",
+  "$region": "ca-central-1",
+  "$source": "AWS public on-demand pricing for ca-central-1 (current as of 2026-04-22). Spot rates are 60-70% of on-demand historically; forge-estimate uses 0.30 * on-demand as a conservative spot estimate. Verify against AWS Pricing API at runtime when feasible.",
+  "$comment": "Prices in USD per hour. EBS rates per GB-month. Refresh this snapshot when AWS pricing shifts >5% on any line item.",
+  "ec2_on_demand": {
+    "g4dn.xlarge":  { "gpu": "1x T4 (16GB)",       "vcpu": 4,  "ram_gb": 16,   "rate_usd_hr": 0.736 },
+    "g4dn.2xlarge": { "gpu": "1x T4 (16GB)",       "vcpu": 8,  "ram_gb": 32,   "rate_usd_hr": 1.052 },
+    "g5.xlarge":    { "gpu": "1x A10G (24GB)",     "vcpu": 4,  "ram_gb": 16,   "rate_usd_hr": 1.212 },
+    "g5.2xlarge":   { "gpu": "1x A10G (24GB)",     "vcpu": 8,  "ram_gb": 32,   "rate_usd_hr": 1.456 },
+    "g5.4xlarge":   { "gpu": "1x A10G (24GB)",     "vcpu": 16, "ram_gb": 64,   "rate_usd_hr": 1.944 },
+    "g6.xlarge":    { "gpu": "1x L4 (24GB)",       "vcpu": 4,  "ram_gb": 16,   "rate_usd_hr": 0.805 },
+    "g6.2xlarge":   { "gpu": "1x L4 (24GB)",       "vcpu": 8,  "ram_gb": 32,   "rate_usd_hr": 0.976 },
+    "p3.2xlarge":   { "gpu": "1x V100 (16GB)",     "vcpu": 8,  "ram_gb": 61,   "rate_usd_hr": 3.825 }
+  },
+  "ec2_spot_factor": 0.30,
+  "ebs_gp3": {
+    "rate_usd_gb_month": 0.10,
+    "iops_baseline": 3000,
+    "throughput_baseline_mbps": 125,
+    "$comment": "Storage rate. forge-estimate amortizes per hour: rate_usd_hr_per_gb = 0.10 / (30*24)."
+  },
+  "s3": {
+    "standard_storage_usd_gb_month": 0.025,
+    "request_put_per_1000": 0.005,
+    "request_get_per_1000": 0.0004,
+    "$comment": "Cost Explorer is the ground truth post-hoc; forge-estimate uses these for projection."
+  },
+  "data_transfer": {
+    "intra_region_ec2_to_s3": 0.0,
+    "internet_egress_first_10tb_gb": 0.09,
+    "$comment": "Intra-region EC2<->S3 is free. Forge avoids cross-region by design (provision rejects cross-region specs)."
+  },
+  "kms": {
+    "request_per_10000": 0.03,
+    "$comment": "Negligible at forge scale."
+  },
+  "cost_explorer": {
+    "request_per_paid": 0.01,
+    "$comment": "First request per day is free; we batch reconciliation calls to stay free."
+  },
+  "instance_recommendations_by_target_params": [
+    { "max_params":  100000000, "regime": "lora-sft",            "preferred_instance": "g5.xlarge"  },
+    { "max_params":  200000000, "regime": "lora-sft",            "preferred_instance": "g5.xlarge"  },
+    { "max_params":  300000000, "regime": "lora-sft",            "preferred_instance": "g5.2xlarge" },
+    { "max_params":  300000000, "regime": "continued-pretrain",  "preferred_instance": "g5.2xlarge" },
+    { "max_params":  300000000, "regime": "from-scratch-pretrain","preferred_instance": "p3.2xlarge" },
+    { "max_params": 2000000000, "regime": "lora-sft",            "preferred_instance": "g5.2xlarge" },
+    { "max_params": 4000000000, "regime": "lora-sft",            "preferred_instance": "g5.2xlarge" },
+    { "max_params": 4000000000, "regime": "qlora-sft",           "preferred_instance": "g5.2xlarge" },
+    { "max_params": 8000000000, "regime": "qlora-sft",           "preferred_instance": "g5.2xlarge" }
+  ],
+  "$instance_notes": {
+    "g5.2xlarge": "Primary recommendation for 3B-7B class models in ca-central-1. A10G 24GB fits 7B QLoRA comfortably (~12 GB used) with room for seq_len=2048.",
+    "g6.2xlarge": "Cheaper alternative to g5.2xlarge in ca-central-1 (~$0.98 vs $1.46). L4 24GB — same memory, ~20-30% slower training throughput than A10G. Use when cost > speed.",
+    "$quota_ceiling_ca-central-1": "8 vCPU G+VT default quota. g5.4xlarge (16 vCPU) + g5.12xlarge + g6e (L40S, not available in ca-central-1) all blocked without a quota increase request."
+  }
+}

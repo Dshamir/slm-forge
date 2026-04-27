@@ -1,0 +1,35 @@
+{
+  "domain_key_used": "dental-research",
+  "thresholds": {
+    "min_tokens": 500000,
+    "min_density": 0.008,
+    "min_categories": 2,
+    "min_absolute": 5
+  },
+  "input": {
+    "doc_count": 4636,
+    "total_chars": 7617773,
+    "approx_tokens": 1904443
+  },
+  "output": {
+    "doc_count": 2370,
+    "total_chars": 6576748,
+    "approx_tokens": 1644187,
+    "kept_pct": 51.12
+  },
+  "drops_by_reason": {
+    "drop_chunk_type": 1638,
+    "near_dup": 76,
+    "below_min_words": 501,
+    "llm_slop": 31,
+    "safety_boilerplate": 10
+  },
+  "warnings": {
+    "triple_word_healed": 39
+  },
+  "kill_condition": {
+    "min_clean_tokens": 500000,
+    "actual_clean_tokens": 1644187,
+    "passes": true
+  }
+}
