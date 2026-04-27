@@ -16,7 +16,7 @@
 
 # SLM-Forge
 
-> A skill tree that takes you from **"here's a corpus and a goal"** to a **trained, evaluated, quantized, and published Small Specialty Language Model** — from the Claude Code CLI, on AWS, in a single session, with a **single human gate**.
+> A skill tree that takes you from **"here's a corpus and a goal"** to a **trained, evaluated, quantized, and published Small Specialty Language Model** — from the Claude Code CLI, on AWS, in a single session, with a **single human gate**, with **interactive live monitoring** (PID-recall to reattach to long-running training), **automatic error detection + correction** (calibration burst, plan-fit refusal, on-failure EC2 teardown), **self-diagnostic** failure reports, and a **corpus-adaptive prep pipeline** that auto-routes 18+ extensions through 19 file plugins + 10 DB adapters with no manifest authoring required.
 
 ---
 
@@ -44,6 +44,54 @@ The point is **scope-honest small models**, not LLM-grade general assistants:
 - **Quick.** End-to-end in 4 – 12 hours wall-clock.
 - **Honest.** Abstention contracts + plan-fit gates surface scope failures *before* you ship.
 - **Local.** Q4_K_M GGUF runs on a laptop.
+
+---
+
+## What you can expect from a run
+
+These are the four properties to actually internalize before invoking the forge — they're what separates this toolkit from "wrap a script around `huggingface-cli`":
+
+### 🔭 Interactive live monitoring (PID-recall)
+
+When a run enters the autonomous spend stage, it spawns `dispatch-v2.sh` in the background on the operator host and posts a heartbeat to S3 (`s3://<YOUR_S3_BUCKET>/forge/<run-id>/manifest.json`) at every phase boundary. You can:
+
+- Tail `dispatch.log` for stdout/stderr.
+- Re-attach to a running training PID hours later from a different shell — the `forge-monitor` skill recalls the PID + EC2 instance ID + S3 manifest version from the canonical state object, polls the training process, and resumes streaming progress without losing context.
+- Detach freely. The EC2 keeps training, the manifest keeps advancing, the operator host can sleep, lose its tunnel, or be replaced.
+- See `lib/manifest.sh:manifest_load` and `skills/forge-monitor/SKILL.md` for the contract.
+
+### 🛠️ Automatic error detection + correction
+
+Failures are *expected* and *handled* at every phase:
+
+- **Calibration burst.** Steps 20–100 of training measure sec/step. If the rate exceeds `FORGE_CALIBRATION_MAX_SEC_PER_STEP` (default 27), the trainer aborts via `control.should_training_stop = True` and returns rc=12 (replan-needed). No 6-hour 1%-progress training session.
+- **Plan-fit pre-spend gate.** Sonnet 4.6 grades a sample of synthesized Q/A on 7 axes *before* GPU spend. Fails fast on bad in-domain %, low Q/A score, blown budget, hyperparameter insanity, or ChatML roundtrip break.
+- **On-failure teardown.** Every phase declares its failure mode + recoverability. Recoverable failures retry once with adjusted params; unrecoverable failures terminate the EC2 immediately, save partial state to S3, emit `failure-report.md`, and exit non-zero. **No frozen pipelines, no stranded EC2.**
+- **Idempotent skills.** Each skill checks the manifest for prior completion before doing work; re-running a phase is safe.
+
+### 🩺 Self-diagnostic failure reports
+
+When a phase fails, the forge writes `failure-report.md` with:
+
+- The exact rc + skill that failed
+- The last 50 lines of `dispatch.log`
+- The S3 path of partial state
+- A suggested next action (`replan` / `retry` / `tear down + start over`)
+- Links to the matching post-mortem in `docs/POST-MORTEM-*.md` if the failure mode has been seen before
+
+The post-mortems in [`docs/POST-MORTEM-2026-04-24.md`](docs/POST-MORTEM-2026-04-24.md) and [`docs/POST-MORTEM-2026-04-26.md`](docs/POST-MORTEM-2026-04-26.md) are real artifacts from the dental v0 run — recommended reading for understanding the failure-mode catalog.
+
+### 🧬 Corpus-adaptive ingestion
+
+You point the forge at a directory and it figures out the rest. No manifest authoring, no per-format conversion scripts:
+
+- **19 file plugins**: PDF / DOCX / PPTX / TXT / XLSX / CSV / PNG / JPG / TIF / HEIC / MP4 / m4a / wav / STL / VTP / OBJ / PLY / MyISAM (`.frm`/`.myi`/`.myd`/`.ibd`) / EPUB / code (`.py`/`.js`/`.ts`/`.cpp`/...) / notebooks / email (`.eml`/`.mbox`) / DICOM / HDF5 / GeoTIFF / ZIP / TAR / RAR
+- **10 DB adapters**: MySQL / Postgres / Mongo / SQLite / DuckDB / MSSQL / ClickHouse / Snowflake / BigQuery / Cassandra
+- **Multi-source YAML**: `templates/multi-source.example.yaml` lets you mix dirs + DBs + JSONL + HuggingFace datasets in one run
+- **Smart filters built in**: MP4 whitelist (skip silent ≤120 s clips), OCR opt-out (`FORGE_DISABLE_OCR=1` for figure-heavy corpora), recursive archive extraction, language filter, MinHash dedup
+- **Adaptive analyzer**: `forge-analyze` auto-detects format mix, estimates clean tokens after audit drop-rate, picks the base model + regime from a budget heuristic ladder
+
+If a plugin is missing for your format, adding one is a single Python file in `scripts/prep_plugins/` — see `scripts/prep_plugins/__init__.py` for the dispatcher contract.
 
 ---
 
@@ -171,28 +219,65 @@ This runs PREFLIGHT → ANALYZE → PLAN and writes `.runs/<new-id>/plan.md`. **
 
 ### 5. Real run
 
-Drop your corpus into a directory (or write a multi-source YAML — see `templates/multi-source.example.yaml`):
+The forge has **two invocation patterns** — pick the one that matches what you're doing:
+
+#### A. New run from a raw corpus
 
 ```bash
-/slm-forge /path/to/your/corpus 50 --domain your.domain
+/slm-forge <target-directory-or-file> <budget-usd> [--domain <label>] [--name <slug>]
 ```
 
-Review the generated `plan.md`. Approve via:
+- `<target-directory-or-file>` — point at raw files (any mix of the 19 supported formats). Can also be a JSONL Q/A file or a multi-source YAML manifest (see `templates/multi-source.example.yaml`).
+- `<budget-usd>` — total cap including Claude API + AWS + HF. Plan-fit refuses if the projected spend exceeds 1.2× this.
+- `--domain` (optional) — domain label that scopes synth + plan-fit grading. Default: auto-detected from corpus.
+
+Examples:
+```bash
+/slm-forge ./Publications/ 75                              # mixed PDF/DOCX → auto-prep + audit + synth
+/slm-forge ./qa-data.jsonl 25 --domain dental.research     # pre-prepared Q/A → straight to train
+/slm-forge ./multi-source.yaml 100                         # dir + DB + jsonl + HF dataset fan-out
+```
+
+#### B. Re-train / continuation from an existing run
+
+```bash
+/slm-forge .runs/$FORGE_ID/ <budget-usd> [--flag ...] [--training-plan <path>]
+```
+
+Pointing the forge at an existing `.runs/<id>/` directory tells it: **resume from this state**. Useful for:
+
+- **Continuation training** (v0 → v0.1) — add new synth buckets, continue-train at lower LR for one epoch.
+- **Re-quantize / re-publish** after fixing a model card or sampling default.
+- **Apply a different training plan** without re-prepping the corpus (the audit + synth + shape outputs are already in S3 and re-used).
+
+Use flags or a `--training-plan plan.yaml` to override regime / hyperparameters / sampling without re-walking the gate.
+
+#### Approving + monitoring
+
+After invocation, the forge runs PREFLIGHT → ANALYZE → PLAN and writes `.runs/<run-id>/plan.md`. Review the cost, regime, and corpus stats. Approve:
 
 ```bash
 bash scripts/approve-plan.sh <run-id>
 ```
 
-The dispatcher fires in the background. Tail progress:
+Dispatcher fires in the background. Three ways to monitor:
 
 ```bash
+# 1. Tail the dispatch log
 tail -f .runs/<run-id>/dispatch.log
+
+# 2. Re-attach later (PID recall — works from any shell, any host with credentials)
+/slm-forge monitor <run-id>
+
+# 3. Poll the manifest directly (canonical state)
+bash lib/manifest.sh manifest_load <run-id> | jq '.phase, .training_runtime'
 ```
 
 When done (or on first failure + teardown), read:
 
-- `.runs/<run-id>/after-action.md`
-- `.runs/<run-id>/qa-report.md`
+- `.runs/<run-id>/after-action.md` — final URLs, cost, samples
+- `.runs/<run-id>/qa-report.md` — gate-by-gate PASS/FAIL + verdict
+- `.runs/<run-id>/failure-report.md` (only on failure) — diagnosis + suggested next action
 
 ### 6. Use the published model
 
