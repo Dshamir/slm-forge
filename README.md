@@ -1,4 +1,16 @@
-<img width="1774" height="887" alt="09d432ee-3b6d-4c67-8e64-f4b8f6120327" src="https://github.com/user-attachments/assets/c93f0dcd-456f-48a0-bc96-b589ead27c19" />
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/c93f0dcd-456f-48a0-bc96-b589ead27c19" alt="SLM-Forge banner" width="100%">
+</p>
+
+<p align="center">
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/Dshamir/slm-forge?color=blue" alt="License: MIT"></a>
+  <a href="https://huggingface.co/Nexless/dental-ai-research-slm-0m-20260425-3845"><img src="https://img.shields.io/badge/%F0%9F%A4%97%20HuggingFace-Live%20case%20study-yellow" alt="HuggingFace model"></a>
+  <a href="https://docs.claude.com/en/docs/claude-code"><img src="https://img.shields.io/badge/Built%20with-Claude%20Code-D97757?logo=anthropic&logoColor=white" alt="Built with Claude Code"></a>
+  <a href="docs/V2-FORGE-SPEC.md"><img src="https://img.shields.io/badge/Spec-V2--FORGE-informational" alt="V2-FORGE-SPEC"></a>
+  <img src="https://img.shields.io/badge/status-PoC-orange" alt="Status: PoC">
+  <a href="https://github.com/Dshamir/slm-forge/stargazers"><img src="https://img.shields.io/github/stars/Dshamir/slm-forge?style=social" alt="GitHub stars"></a>
+  <a href="https://github.com/Dshamir/slm-forge/commits/main"><img src="https://img.shields.io/github/last-commit/Dshamir/slm-forge" alt="Last commit"></a>
+</p>
 
 ---
 
