@@ -110,7 +110,6 @@ On failure:
 ## See
 
 - `README.md` — user-facing entry + prerequisites
-- `docs/TOMORROW.md` — cold-start playbook
 - `scripts/forge.sh` — Stage 1 entry point
 - `scripts/approve-plan.sh` — PLAN_GATE firing mechanism
 - `scripts/dispatch-v2.sh` — Stage 3 plan executor

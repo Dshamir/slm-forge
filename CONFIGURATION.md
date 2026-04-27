@@ -8,7 +8,7 @@ SLM-Forge reads all secrets and tenant-specific values from environment variable
 |---|---|---|---|
 | `ANTHROPIC_API_KEY` | synth, plan-fit, smoketest | — | Get one from [console.anthropic.com](https://console.anthropic.com). Models used: Haiku 4.5, Sonnet 4.6. |
 | `HF_TOKEN` | register, publish | — | `Settings → Access Tokens → New token`, role `write`. |
-| `AWS_ACCESS_KEY_ID` | provision, bootstrap, train, monitor | — | IAM user with EC2 + S3 + KMS perms. Per-resource scoping in `docs/HARDENING.md`. |
+| `AWS_ACCESS_KEY_ID` | provision, bootstrap, train, monitor | — | IAM user with EC2 + S3 + KMS perms. Per-resource scoping in `scripts/setup-aws.sh`. |
 | `AWS_SECRET_ACCESS_KEY` | as above | — | |
 | `AWS_DEFAULT_REGION` | as above | — | Default: `ca-central-1`. v2 target: `us-east-1`. |
 | `FORGE_BUCKET` | all S3 ops | `<YOUR_S3_BUCKET>` | Your CAS S3 bucket name. Must exist + be KMS-encrypted. |
@@ -43,7 +43,7 @@ Source code in this repo has been sanitized: tenant-specific identifiers are rep
 | `<YOUR_PROJECT_TAG>` | the EC2 tag scope value | (hardcode in `lib/compute_aws.sh` if you want resource-tag-scoped IAM) |
 | `<PROJECT_HOME>` | path to project root on your workstation | (no env var; path-leak placeholder for any docs that referenced an absolute path) |
 
-For full IAM policy + KMS + S3 setup, see `docs/HARDENING.md`.
+For full IAM policy + KMS + S3 setup, read `scripts/setup-aws.sh` before running it.
 
 ## Quick start
 

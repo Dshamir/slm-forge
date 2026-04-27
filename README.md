@@ -118,7 +118,7 @@ All secrets live in environment variables. **No secrets are committed to this re
 |---|---|---|
 | `ANTHROPIC_API_KEY` | Anthropic API key | `sk-ant-...` |
 | `HF_TOKEN` | HuggingFace write token | `hf_...` (Settings → Access Tokens, role `write`) |
-| `AWS_ACCESS_KEY_ID` | AWS IAM user with EC2/S3/KMS perms | scoped per `docs/HARDENING.md` |
+| `AWS_ACCESS_KEY_ID` | AWS IAM user with EC2/S3/KMS perms | scope to least-privilege; example policy in `scripts/setup-aws.sh` |
 | `AWS_SECRET_ACCESS_KEY` | matching AWS secret | |
 | `AWS_DEFAULT_REGION` | Region (today: `ca-central-1`; v2 target: `us-east-1`) | |
 | `FORGE_BUCKET` | Your CAS S3 bucket name | replaces placeholder `<YOUR_S3_BUCKET>` |
@@ -128,13 +128,11 @@ All secrets live in environment variables. **No secrets are committed to this re
 
 Drop them into `~/.env` (or wherever your shell sources from). The forge reads them at run start; missing-credential preflight fails fast before any API spend.
 
-**One-time AWS setup:** see `docs/HARDENING.md` for the IAM policy, S3 bucket, KMS key, and per-resource tagging recipes. There's a setup script at `scripts/setup-aws.sh` (read it before running). Also see [`CONFIGURATION.md`](CONFIGURATION.md) for the full placeholder → env-var map.
+**One-time AWS setup:** there's a setup script at `scripts/setup-aws.sh` (read it before running) — creates the KMS-encrypted CAS bucket, the IAM user with least-privilege policy, and the resource tags the forge expects. Also see [`CONFIGURATION.md`](CONFIGURATION.md) for the full placeholder → env-var map.
 
 ---
 
 ## Architecture
-
-> Full diagrams + design rationale: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md). Brief overview here.
 
 ### One human gate
 
@@ -398,13 +396,9 @@ slm-forge/
 ├── eval-sets/             ← held-out eval prompts per domain
 ├── tests/                 ← bash + pytest smoke tests
 ├── docs/
-│   ├── ARCHITECTURE.md    ← full design + diagrams
-│   ├── HARDENING.md       ← IAM scoping, KMS, secrets management
 │   ├── V2-FORGE-SPEC.md   ← v2 spec (next major artifact)
 │   ├── POST-MORTEM-2026-04-24.md  ← real failure report from v0 run (educational)
-│   ├── POST-MORTEM-2026-04-26.md  ← real failure report from v0 run (educational)
-│   ├── SYMPOSIUM-HANDOFF.md       ← demo-day handoff doc
-│   └── TOMORROW.md        ← rolling open-questions list
+│   └── POST-MORTEM-2026-04-26.md  ← real failure report from v0 run (educational)
 └── examples/
     └── runs/
         └── 20260425-163412-4b31/   ← sanitized v0-preview run artifacts
